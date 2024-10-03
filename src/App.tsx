@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react'
 import Header from './components/Header'
 import Produtos from './containers/Produtos'
-
 import { GlobalStyle } from './styles'
+import { useDispatch, useSelector } from 'react-redux'
+import { RootState } from './store/store'
+import { adicionarAoCarrinho } from './store/carrinhoSlice'
+import { adicionarOuRemoverFavorito } from './store/favoritosSlice'
+import { useGetProdutosQuery } from './store/apiSlice'
 
 export type Produto = {
   id: number
@@ -12,31 +15,21 @@ export type Produto = {
 }
 
 function App() {
-  const [produtos, setProdutos] = useState<Produto[]>([])
-  const [carrinho, setCarrinho] = useState<Produto[]>([])
-  const [favoritos, setFavoritos] = useState<Produto[]>([])
+  const { data: produtos = [], isLoading } = useGetProdutosQuery() // Usando o hook da API
+  const carrinho = useSelector((state: RootState) => state.carrinho.carrinho)
+  const favoritos = useSelector((state: RootState) => state.favoritos.favoritos)
+  const dispatch = useDispatch()
 
-  useEffect(() => {
-    fetch('https://fake-api-tau.vercel.app/api/ebac_sports')
-      .then((res) => res.json())
-      .then((res) => setProdutos(res))
-  }, [])
-
-  function adicionarAoCarrinho(produto: Produto) {
-    if (carrinho.find((p) => p.id === produto.id)) {
-      alert('Item já adicionado')
-    } else {
-      setCarrinho([...carrinho, produto])
-    }
+  function adicionarAoCarrinhoRedux(produto: Produto) {
+    dispatch(adicionarAoCarrinho(produto))
   }
 
-  function favoritar(produto: Produto) {
-    if (favoritos.find((p) => p.id === produto.id)) {
-      const favoritosSemProduto = favoritos.filter((p) => p.id !== produto.id)
-      setFavoritos(favoritosSemProduto)
-    } else {
-      setFavoritos([...favoritos, produto])
-    }
+  function favoritarRedux(produto: Produto) {
+    dispatch(adicionarOuRemoverFavorito(produto))
+  }
+
+  if (isLoading) {
+    return <div>Carregando...</div> // Exibe um estado de carregamento
   }
 
   return (
@@ -47,8 +40,8 @@ function App() {
         <Produtos
           produtos={produtos}
           favoritos={favoritos}
-          favoritar={favoritar}
-          adicionarAoCarrinho={adicionarAoCarrinho}
+          favoritar={favoritarRedux}
+          adicionarAoCarrinho={adicionarAoCarrinhoRedux}
         />
       </div>
     </>
